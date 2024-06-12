@@ -1,0 +1,16 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    gosu (1.4.6)
+    hasu (0.1.7)
+      gosu
+
+PLATFORMS
+  ruby
+  x64-mingw-ucrt
+
+DEPENDENCIES
+  hasu
+
+BUNDLED WITH
+   2.4.19
