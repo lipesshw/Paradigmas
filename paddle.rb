@@ -1,7 +1,7 @@
 class Paddle
   WIDTH = 16
   HEIGHT = 192 # Aumenta a altura da raquete
-  SPEED = 10   # Aumenta a velocidade da raquete
+  SPEED = 13   # Aumenta a velocidade da raquete
 
   attr_reader :side, :y, :ai
   alias ai? ai

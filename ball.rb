@@ -8,7 +8,7 @@ class Ball
     @y = Pong::HEIGHT / 2
     @angle = rand(120) + 30
     @angle *= -1 if rand > 0.5
-    @speed = 50 # Ajusta a velocidade inicial
+    @speed = 10 # Ajusta a velocidade inicial
   end
 
   def dx
