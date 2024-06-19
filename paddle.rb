@@ -44,7 +44,14 @@ class Paddle
   end
 
   def draw(window)
-    color = Gosu::Color::WHITE
+    if side == :left
+      color = Gosu::Color::RED
+    elsif side == :right
+      color = Gosu::Color::BLUE
+    else
+      color = Gosu::Color::WHITE
+    end
+
     window.draw_quad(
       x1, y1, color,
       x1, y2, color,

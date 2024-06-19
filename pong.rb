@@ -120,9 +120,26 @@ class Pong < Hasu::Window
   end
 
   def draw_victory
-    @font.draw_text("Vitória!", WIDTH / 2 - 100, HEIGHT / 2 - 100, 0, 1, 1, Gosu::Color::GREEN)
-    @small_font.draw_text("Pressione Enter para voltar ao menu", WIDTH / 2 - 200, HEIGHT / 2, 0, 1, 1, Gosu::Color::WHITE)
+    winner_name = @winner == :left ? @player1_name : @player2_name
+    victory_text = "#{winner_name} venceu a partida!"
+  
+    # Calculando a posição x para centralizar o texto de vitória
+    victory_text_width = @font.text_width(victory_text)
+    victory_text_x = (WIDTH - victory_text_width) / 2
+  
+    # Desenhar o texto de vitória centralizado
+    @font.draw_text(victory_text, victory_text_x, HEIGHT / 2 - 100, 0, 1, 1, Gosu::Color::GREEN)
+  
+    # Calculando a posição x para centralizar o texto "Pressione Enter para voltar ao menu"
+    return_to_menu_text = "Pressione Enter para voltar ao menu"
+    return_to_menu_text_width = @small_font.text_width(return_to_menu_text)
+    return_to_menu_text_x = (WIDTH - return_to_menu_text_width) / 2
+  
+    # Desenhar o texto "Pressione Enter para voltar ao menu" centralizado em relação ao texto de vitória
+    @small_font.draw_text(return_to_menu_text, return_to_menu_text_x, HEIGHT / 2, 0, 1, 1, Gosu::Color::WHITE)
   end
+  
+  
 
   def update
     if @state == :menu
