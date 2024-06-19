@@ -29,7 +29,7 @@ class Pong < Hasu::Window
 
   def load_ranking
     if File.exist?("rankings.yml")
-      YAML.load_file("rankings.yml")
+      YAML.load_file("rankings.yml") || []
     else
       []
     end
@@ -47,42 +47,81 @@ class Pong < Hasu::Window
       draw_player_names
     when :instructions
       draw_instructions
+    when :victory
+      draw_victory
     else
-      @ball.draw(self)
-      @font.draw(@left_score, 50, 50, 0)
-      @font.draw(@right_score, WIDTH - 100, 50, 0)
-      @left_paddle.draw(self)
-      @right_paddle.draw(self)
+      draw_game
     end
   end
 
+  def draw_game
+    @ball.draw(self)
+    
+    # Placares
+    score_text_left = "#{@left_score}"
+    score_text_right = "#{@right_score}"
+    score_width = @font.text_width(score_text_left)
+    @font.draw_text(score_text_left, WIDTH / 2 - score_width - 40, 50, 0)
+    @font.draw_text(score_text_right, WIDTH / 2 + 40, 50, 0)
+    
+    # Linha vertical separadora
+    separator_x = WIDTH / 2 - 5
+    separator_y1 = 50
+    separator_y2 = separator_y1 + @font.height
+    draw_line(separator_x, separator_y1, Gosu::Color::WHITE, separator_x, separator_y2, Gosu::Color::WHITE)
+  
+    @left_paddle.draw(self)
+    @right_paddle.draw(self)
+  
+    # Desenhar os nomes dos jogadores ao lado do placar
+    if @player1_name
+      @small_font.draw_text(@player1_name, WIDTH / 2 - score_width - 10 - @small_font.text_width(@player1_name) - 20, 120, 0, 1, 1, Gosu::Color::RED)
+    end
+  
+    if @player2_name
+      @small_font.draw_text(@player2_name, WIDTH / 2 + 10 + score_width + 20, 120, 0, 1, 1, Gosu::Color::BLUE)
+    end
+  end
+  
+  
+
   def draw_menu
     @logo.draw(WIDTH / 2 - @logo.width * @logo_scale / 2, 100, 0, @logo_scale, @logo_scale) # Desenhar o logo no menu
-    @small_font.draw("1. Jogar contra I.A", WIDTH / 2 - 200, 400, 0, 1, 1, menu_option_color(1))
-    @small_font.draw("2. Jogar contra Amigo", WIDTH / 2 - 200, 500, 0, 1, 1, menu_option_color(2))
-    @small_font.draw("3. Como jogar", WIDTH / 2 - 200, 600, 0, 1, 1, menu_option_color(3))
+    @small_font.draw_text("1. Jogar contra I.A", WIDTH / 2 - 200, 400, 0, 1, 1, menu_option_color(1))
+    @small_font.draw_text("2. Jogar contra Amigo", WIDTH / 2 - 200, 500, 0, 1, 1, menu_option_color(2))
+    @small_font.draw_text("3. Como jogar", WIDTH / 2 - 200, 600, 0, 1, 1, menu_option_color(3))
     draw_ranking
   end
 
   def draw_ranking
-    @font.draw("Ranking", 3 * WIDTH / 4 - 100, 200, 0)
-    @ranking.each_with_index do |entry, index|
-      @small_font.draw("#{index + 1}. #{entry[:name]} - #{entry[:wins]} vitórias", 3 * WIDTH / 4 - 100, 300 + index * 50, 0)
+    @font.draw_text("Ranking - TOP 5 WINS", 3 * WIDTH / 4 - 100, 200, 0)
+    
+    # Limitar a exibição aos top 5 jogadores
+    top_players = @ranking.take(5)
+    
+    top_players.each_with_index do |entry, index|
+      @small_font.draw_text("#{index + 1}. #{entry[:name]} → #{entry[:wins]} vitórias", 3 * WIDTH / 4 - 100, 300 + index * 50, 0)
     end
   end
+  
 
   def draw_player_names
-    @small_font.draw("Digite o nome do Jogador 1:", WIDTH / 2 - 200, 400, 0)
+    @small_font.draw_text("Digite o nome do Jogador 1:", WIDTH / 2 - 200, 400, 0)
     @player1_name_field.draw
-    @small_font.draw("Digite o nome do Jogador 2:", WIDTH / 2 - 200, 500, 0)
+    @small_font.draw_text("Digite o nome do Jogador 2:", WIDTH / 2 - 200, 500, 0)
     @player2_name_field.draw
   end
 
   def draw_instructions
-    @font.draw("Como jogar", WIDTH / 2 - 150, 200, 0)
-    @small_font.draw("Use as teclas W e S para mover a raquete esquerda", WIDTH / 4, 400, 0)
-    @small_font.draw("Use as setas para mover a raquete direita", WIDTH / 4, 450, 0)
-    @small_font.draw("Pressione Esc para voltar ao menu", WIDTH / 4, 500, 0)
+    @font.draw_text("Como jogar", WIDTH / 2 - 150, 200, 0)
+    @small_font.draw_text("Use as teclas W e S para mover a raquete esquerda", WIDTH / 4, 400, 0)
+    @small_font.draw_text("Use as setas para mover a raquete direita", WIDTH / 4, 450, 0)
+    @small_font.draw_text("Pressione Esc para voltar ao menu", WIDTH / 4, 500, 0)
+  end
+
+  def draw_victory
+    @font.draw_text("Vitória!", WIDTH / 2 - 100, HEIGHT / 2 - 100, 0, 1, 1, Gosu::Color::GREEN)
+    @small_font.draw_text("Pressione Enter para voltar ao menu", WIDTH / 2 - 200, HEIGHT / 2, 0, 1, 1, Gosu::Color::WHITE)
   end
 
   def update
@@ -90,6 +129,8 @@ class Pong < Hasu::Window
       handle_menu_input
     elsif @state == :player_names
       # Não há lógica de atualização necessária para a entrada de nomes dos jogadores
+    elsif @state == :victory
+      handle_victory_input
     else
       @ball.move!
       if @left_paddle.ai?
@@ -116,13 +157,45 @@ class Pong < Hasu::Window
       end
       if @ball.off_left?
         @right_score += 1
+        check_victory
         @ball = Ball.new
       end
       if @ball.off_right?
         @left_score += 1
+        check_victory
         @ball = Ball.new
       end
     end
+  end
+
+  def check_victory
+    if @left_score >= 5
+      @winner = :left
+      @state = :victory
+      update_ranking(@player1_name)
+    elsif @right_score >= 5
+      @winner = :right
+      @state = :victory
+      update_ranking(@player2_name)
+    end
+  end
+
+  def update_ranking(winner_name)
+    entry_found = false
+
+    @ranking.each do |entry|
+      if entry[:name] == winner_name
+        entry[:wins] += 1
+        entry_found = true
+        break
+      end
+    end
+
+    unless entry_found
+      @ranking << { name: winner_name, wins: 1 }
+    end
+
+    save_ranking
   end
 
   def menu_option_color(option)
@@ -142,11 +215,18 @@ class Pong < Hasu::Window
       elsif mouse_over_option?(2)
         @ai = false
         @state = :player_names
-        @player1_name_field = TextField.new(self, WIDTH / 2 - 200, 450)
+        @player1_name_field = TextField.new(self, WIDTH / 2 -         200, 450)
         @player2_name_field = TextField.new(self, WIDTH / 2 - 200, 550)
+        @active_field = @player1_name_field
       elsif mouse_over_option?(3)
         @state = :instructions
       end
+    end
+  end
+
+  def handle_victory_input
+    if button_down?(Gosu::KbReturn)
+      @state = :menu
     end
   end
 
@@ -160,24 +240,16 @@ class Pong < Hasu::Window
       handle_menu_input
     when :player_names
       if button == Gosu::KbReturn
-        @player1_name = @player1_name_field.text
-        @player2_name = @player2_name_field.text
-        @state = :game
-        reset
-      else
-        if @player1_name_field.text.empty? || @player2_name_field.text.empty?
-          if @player1_name_field.text.empty?
-            @player1_name_field.button_down(button)
-          else
-            @player2_name_field.button_down(button)
-          end
+        if @active_field == @player1_name_field
+          @active_field = @player2_name_field
         else
-          if @player1_name_field.text.length < 3
-            @player1_name_field.button_down(button)
-          else
-            @player2_name_field.button_down(button)
-          end
+          @player1_name = @player1_name_field.text
+          @player2_name = @player2_name_field.text
+          @state = :game
+          reset
         end
+      else
+        @active_field.button_down(button)
       end
     when :game
       case button
@@ -186,6 +258,8 @@ class Pong < Hasu::Window
       end
     when :instructions
       @state = :menu if button == Gosu::KbEscape
+    when :victory
+      handle_victory_input
     end
   end
 end
@@ -198,27 +272,28 @@ class TextField
     @x = x
     @y = y
     @text = ""
-    @font = Gosu::Font.new(30)
+    @font = Gosu::Font.new(@window, "Arial", 30)
   end
 
   def draw
-    @window.draw_quad(@x - 5, @y - 5, Gosu::Color::BLACK, @x + 200 + 5, @y - 5, Gosu::Color::BLACK, @x - 5, @y + 30 + 5, Gosu::Color::BLACK, @x + 200 + 5, @y + 30 + 5, Gosu::Color::BLACK, 0)
-    @window.draw_quad(@x, @y, Gosu::Color::WHITE, @x + 200, @y, Gosu::Color::WHITE, @x, @y + 30, Gosu::Color::WHITE, @x + 200, @y + 30, Gosu::Color::WHITE, 0)
+    width = 400
+    height = 40
+    @window.draw_quad(@x - 5, @y - 5, Gosu::Color::BLACK, @x + width + 5, @y - 5, Gosu::Color::BLACK, @x - 5, @y + height + 5, Gosu::Color::BLACK, @x + width + 5, @y + height + 5, Gosu::Color::BLACK, 0)
+    @window.draw_quad(@x, @y, Gosu::Color::WHITE, @x + width, @y, Gosu::Color::WHITE, @x, @y + height, Gosu::Color::WHITE, @x + width, @y + height, Gosu::Color::WHITE, 0)
     @font.draw_text(@text, @x + 5, @y + 5, 0, 1, 1, Gosu::Color::BLACK)
   end
 
   def button_down(id)
-    if id == Gosu::KbBackspace
+    case id
+    when Gosu::KbBackspace
       @text.chop!
-    elsif id == Gosu::KbReturn || id == Gosu::KbTab
-      # Do nothing, handle input in main logic
-    else
-      char = Gosu.button_id_to_char(id)
-      if char =~ /[[:print:]]/
-        @text << char
-      end
+    when Gosu::KbSpace
+      @text += " "
+    when Gosu::KbA..Gosu::KbZ, Gosu::Kb0..Gosu::Kb9
+      @text += Gosu.button_id_to_char(id)
     end
   end
 end
 
 Pong.run
+

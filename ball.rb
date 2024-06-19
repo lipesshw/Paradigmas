@@ -54,12 +54,21 @@ class Ball
 
   def draw(window)
     color = Gosu::Color::RED
-    window.draw_quad(
-      x1, y1, color,
-      x1, y2, color,
-      x2, y2, color,
-      x2, y1, color
-    )
+    draw_circle(window, @x, @y, SIZE / 2, color)
+  end
+
+  def draw_circle(window, x, y, radius, color)
+    segments = 32
+    angle_step = 2 * Math::PI / segments
+    (0...segments).each do |i|
+      angle1 = i * angle_step
+      angle2 = (i + 1) * angle_step
+      x1 = x + Math.cos(angle1) * radius
+      y1 = y + Math.sin(angle1) * radius
+      x2 = x + Math.cos(angle2) * radius
+      y2 = y + Math.sin(angle2) * radius
+      window.draw_triangle(x, y, color, x1, y1, color, x2, y2, color, 0)
+    end
   end
 
   def off_left?
